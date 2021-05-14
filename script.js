@@ -52,6 +52,7 @@ $("#cells").scroll(function (e) {
 // Function when user double click then the cell became contenteditable
 
 $(".input-cell").dblclick(function (e) {
+    $(".input-cell.selected").removeClass("selected top-selected bottom-selected left-selected right-selected");
     $(this).attr("contenteditable", "true");
     $(this).focus();
 });
@@ -92,8 +93,36 @@ function getTopLeftBottomRightCell(rowId, colId) {
 $(".input-cell").click(function (e) {
     let [rowId, colId] = getRowCol(this);
     let [topCell, bottomCell, leftCell, rightCell] = getTopLeftBottomRightCell(rowId, colId);
-    selectCell(this, e, topCell, bottomCell, leftCell, rightCell);
+    if ($(this).hasClass("selected") && e.ctrlKey) {
+        unselectCell(this, e, topCell, bottomCell, leftCell, rightCell);
+    } else {
+        selectCell(this, e, topCell, bottomCell, leftCell, rightCell);
+    }
 });
+
+
+// Function to unselect cell 
+function unselectCell(ele, e, topCell, bottomCell, leftCell, rightCell) {
+    if ($(ele).attr("contenteditable" == "false")) {
+        if ($(ele).hasClass("top-selected")) {
+            topCell.removeClass("bottom-selected");
+        }
+
+        if ($(ele).hasClass("bottom-selected")) {
+            bottomCell.removeClass("top-selected");
+        }
+
+        if ($(ele).hasClass("left-selected")) {
+            leftCell.removeClass("right-selected");
+        }
+
+        if ($(ele).hasClass("right-selected")) {
+            rightCell.removeClass("left-selected");
+        }
+        $(ele).removeClass("selected top-selected bottom-selected left-selected right-selected");
+    }
+}
+
 
 // Top selected
 // ele means current element
