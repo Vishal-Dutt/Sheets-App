@@ -103,7 +103,7 @@ $(".input-cell").click(function (e) {
 
 // Function to unselect cell 
 function unselectCell(ele, e, topCell, bottomCell, leftCell, rightCell) {
-    if ($(ele).attr("contenteditable" == "false")) {
+    if ($(ele).attr("contenteditable") == "false") {
         if ($(ele).hasClass("top-selected")) {
             topCell.removeClass("bottom-selected");
         }
@@ -177,4 +177,42 @@ function selectCell(ele, e, topCell, bottomCell, leftCell, rightCell) {
         $(".input-cell.selected").removeClass("selected top-selected bottom-selected left-selected right-selected");
     }
     $(ele).addClass("selected");
+}
+
+// Select Cell Using Mouse Drag
+let startcellSelected = false;
+let startCell = {};
+let endCell = {};
+$(".input-cell").mousemove(function (e) {
+    e.preventDefault();
+    // console.log(e.buttons);
+    if (e.buttons == 1) {
+        $(".input-cell.selected").removeClass("selected top-selected bottom-selected left-selected right-selected");
+        if (!startcellSelected) {
+            let [rowId, colId] = getRowCol(this);
+            startCell = { "rowId": rowId, "colId": colId };
+            startcellSelected = true;
+            // console.log(startCell);
+        } else {
+            let [rowId, colId] = getRowCol(this);
+            endCell = { "rowId": rowId, "colId": colId };
+            selectAllBetweenCells(startCell, endCell);
+        }
+        // console.log(startCell,endCell);
+    } else {
+        startcellSelected = false;
+    }
+})
+
+// Fucntion to traverse and select cells between start and end points
+function selectAllBetweenCells(start, end) {
+    for (let i = Math.min(start.rowId, end.rowId); i <= Math.max(start.rowId, end.rowId); i++) {
+        for (let j = Math.min(start.colId, end.colId); j <= Math.max(start.colId, end.colId); j++) {
+            let [topCell, bottomCell, leftCell, rightCell] = getTopLeftBottomRightCell(i, j);
+            // console.log($(`#row-${i}-col-${j}`));
+            // $(`#rwo-${i}-col-${j}`)[0] is equal to this
+            // $(`#row-${i}-col-${j}`) is equal to $(this)
+            selectCell($(`#row-${i}-col-${j}`)[0], { "ctrlKey": true }, topCell, bottomCell, leftCell, rightCell);
+        }
+    }
 }
