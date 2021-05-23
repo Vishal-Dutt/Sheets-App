@@ -208,29 +208,71 @@ function selectCell(ele, e, topCell, bottomCell, leftCell, rightCell) {
 let startcellSelected = false;
 let startCell = {};
 let endCell = {};
+let scrollXRStarted = false;
+let scrollXLStarted = false;
 $(".input-cell").mousemove(function (e) {
+    // e.pagex shows mouse position
+    // console.log($(window).width());
+    // console.log(e.pageX);
+    // console.log(e.pageY);
+    // console.log($(window).height());
     e.preventDefault();
     if (e.buttons == 1) {
+        // Move scroll bar while selecting cells
+        if (e.pageX > ($(window).width() - 10) && !scrollXRStarted) {
+            // scroll in x direction
+            scrollXR();
+        } else if (e.pageX < 10 && !scrollXLStarted) {
+            scrollXL();
+        }
+
         if (!startcellSelected) {
             let [rowId, colId] = getRowCol(this);
             startCell = { "rowId": rowId, "colId": colId };
             // The below line selects the start cell if we left click on the cell and move cursor slightly
-            selectAllBetweenCells(startCell,startCell);
+            selectAllBetweenCells(startCell, startCell);
             startcellSelected = true;
         }
     } else {
         startcellSelected = false;
     }
-})
+});
 
 $(".input-cell").mouseenter(function (e) {
     // console.log("hello");
     if (e.buttons == 1) {
+        if (e.pageX < ($(window).width() - 10) && scrollXRStarted) {
+            clearInterval(scrollXRInterval);
+            scrollXRStarted = false;
+        }
+
+        if (e.pageX > 10 && scrollXLStarted) {
+            clearInterval(scrollXLInterval);
+            scrollXLStarted = false;
+        }
+
         let [rowId, colId] = getRowCol(this);
         endCell = { "rowId": rowId, "colId": colId };
         selectAllBetweenCells(startCell, endCell);
     }
 })
+
+// $(".input-cell").mouseenter(function (e) {
+//     if (e.buttons == 1) {
+//         if (e.pageX < ($(window).width() - 100) && scrollXRStarted) {
+//             clearInterval(scrollXRInterval);
+//             scrollXRStarted = false;
+//         }
+
+//         if (e.pageX > 100 && scrollXLStarted) {
+//             clearInterval(scrollXLInterval);
+//             scrollXLStarted = false;
+//         }
+//         let [rowId, colId] = getRowCol(this);
+//         endCell = { "rowId": rowId, "colId": colId };
+//         selectAllBetweenCells(startCell, endCell);
+//     }
+// })
 
 
 // Fucntion to traverse and select cells between start and end points
@@ -248,3 +290,42 @@ function selectAllBetweenCells(start, end) {
     }
 }
 
+// Scroll in x-axis in right direction 
+let scrollXRInterval;
+function scrollXR() {
+    scrollXRStarted = true;
+    scrollXRInterval = setInterval(() => {
+        $("#cells").scrollLeft($("#cells").scrollLeft() + 100);
+    }, 100);
+}
+
+
+// Scroll x-axis in left direction
+let scrollXLInterval;
+function scrollXL() {
+    scrollXLStarted = true;
+    scrollXLInterval = setInterval(() => {
+        $("#cells").scrollLeft($("#cells").scrollLeft() - 100);
+    }, 100);
+}
+
+$(".data-container").mousemove(function (e) {
+    e.preventDefault();
+    if(e.buttons == 1){
+        if (e.pageX > ($(window).width() - 10) && !scrollXRStarted) {
+            // scroll right
+            scrollXR();
+        } else if (e.pageX < 10 && !scrollXLStarted) {
+            // scroll left
+            scrollXL();
+        }
+    }
+})
+
+// This will celear interval in mouse clic is released
+$(".data-container").mouseup(function (e) {
+    clearInterval(scrollXRInterval);
+    clearInterval(scrollXLInterval);
+    scrollXRStarted = false;
+    scrollXLStarted = false;
+});
