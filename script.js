@@ -210,6 +210,8 @@ let startCell = {};
 let endCell = {};
 let scrollXRStarted = false;
 let scrollXLStarted = false;
+let scrollYBStarted = false;
+let scrollYTStarted = false;
 $(".input-cell").mousemove(function (e) {
     // e.pagex shows mouse position
     // console.log($(window).width());
@@ -219,12 +221,12 @@ $(".input-cell").mousemove(function (e) {
     e.preventDefault();
     if (e.buttons == 1) {
         // Move scroll bar while selecting cells
-        if (e.pageX > ($(window).width() - 10) && !scrollXRStarted) {
-            // scroll in x direction
-            scrollXR();
-        } else if (e.pageX < 10 && !scrollXLStarted) {
-            scrollXL();
-        }
+        // if (e.pageX > ($(window).width() - 10) && !scrollXRStarted) {
+        //     // scroll in x direction
+        //     scrollXR();
+        // } else if (e.pageX < 10 && !scrollXLStarted) {
+        //     scrollXL();
+        // }
 
         if (!startcellSelected) {
             let [rowId, colId] = getRowCol(this);
@@ -249,6 +251,11 @@ $(".input-cell").mouseenter(function (e) {
         if (e.pageX > 10 && scrollXLStarted) {
             clearInterval(scrollXLInterval);
             scrollXLStarted = false;
+        }
+
+        if (e.pageY < ($(window).height() - 10) && scrollYBStarted) {
+            clearInterval(scrollYBInterval);
+            scrollYBStarted = false;
         }
 
         let [rowId, colId] = getRowCol(this);
@@ -309,15 +316,26 @@ function scrollXL() {
     }, 100);
 }
 
+// scroll bottom
+let scrollYBInterval;
+function scrollYB() {
+    scrollYBStarted = true;
+    scrollYBInterval = setInterval(() => {
+        $("#cells").scrollTop($("#cells").scrollTop() + 100);
+    }, 100);
+}
+
 $(".data-container").mousemove(function (e) {
     e.preventDefault();
-    if(e.buttons == 1){
+    if (e.buttons == 1) {
         if (e.pageX > ($(window).width() - 10) && !scrollXRStarted) {
             // scroll right
             scrollXR();
         } else if (e.pageX < 10 && !scrollXLStarted) {
             // scroll left
             scrollXL();
+        } else if (e.pageY > ($(window).height() - 10) && !scrollYBStarted) {
+            scrollYB();
         }
     }
 })
@@ -326,6 +344,8 @@ $(".data-container").mousemove(function (e) {
 $(".data-container").mouseup(function (e) {
     clearInterval(scrollXRInterval);
     clearInterval(scrollXLInterval);
+    clearInterval(scrollYBInterval);
     scrollXRStarted = false;
     scrollXLStarted = false;
+    scrollYBStarted = false;
 });
