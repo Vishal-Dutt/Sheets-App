@@ -216,6 +216,9 @@ function changeHeader([rowId, colId]) {
     addRemoveSelectFromFontStyle(data, "underlined");
     $("#fill-color").css("border-bottom", `4px solid ${data.bgcolor}`);
     $("#text-color").css("border-bottom", `4px solid ${data.color}`);
+    $("#font-family").val(data["font-family"]);
+    $("#font-size").val(data["font-size"]);
+    $("#font-family").css("font-family", data["font-family"]);
 }
 
 function addRemoveSelectFromFontStyle(data, property) {
@@ -526,3 +529,24 @@ $("#text-color").click(function (e) {
 //         $(this).parent().click();
 //     }, 10)
 // });
+
+// Change Font family and font size 
+$(".menu-selector").change(function (e) {
+    let value = $(this).val();
+    // console.log(value);
+    let key = $(this).attr("id");
+    if (key == "font-family") {
+        $("#font-family").css(key, value);
+    }
+    // console.log(typeof(value));
+    // isNaN --> if a string is passed to the isNaN is convertable to number return false and returns true if it is not convertable to number
+    if (!isNaN(value)) {
+        value = parseInt(value);
+    }
+
+    $(".input-cell.selected").css(key, value);
+    $(".input-cell.selected").each((index, data) => {
+        let [rowId, colId] = getRowCol(data);
+        cellData[rowId - 1][colId - 1][key] = value;
+    })
+})
