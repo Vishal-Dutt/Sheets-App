@@ -23,27 +23,33 @@ for (let i = 1; i <= 100; i++) {
 }
 
 // Cell Data Default Properties
-let cellData = [];
+let cellData = {
+    "Sheet1": {}
+};
+
+let selectedSheet = "Sheet1";
+let totalSheets = 1;
+
+// Default Properties of Each Cell In Sheet
+let defaultProperties = {
+    "font-family": "Noto Sans",
+    "font-size": 14,
+    "text": "",
+    "bold": false,
+    "italic": false,
+    "underlined": false,
+    "alignment": "left",
+    "color": "#444",
+    "bgcolor": "#fff"
+};
+
 
 // Add Cells to the cell div
 for (let i = 1; i <= 100; i++) {
     let row = $(`<div class="cell-row"></div>`)
-    let rowArray = [];
     for (let j = 1; j <= 100; j++) {
         row.append(`<div id="row-${i}-col-${j}" class="input-cell" contenteditable="false"></div>`);
-        rowArray.push({
-            "font-family": "Noto Sans",
-            "font-size": 14,
-            "text": "",
-            "bold": false,
-            "italic": false,
-            "underlined": false,
-            "alignment": "left",
-            "color": "#444",
-            "bgcolor": "#fff"
-        });
     }
-    cellData.push(rowArray);
     $("#cells").append(row);
 }
 
@@ -408,12 +414,41 @@ $(".alignment").click(function (e) {
     $(this).addClass("selected");
     $(".input-cell.selected").css("text-align", alignment);
     // Traversing on cells For each loop in jquery
-    $(".input-cell.selected").each(function (index, data) {
-        // The data will print this
-        // console.log(data);
-        let [rowId, colId] = getRowCol(data);
-        cellData[rowId - 1][colId - 1].alignment = alignment;
-    });
+    // $(".input-cell.selected").each(function (index, data) {
+    //     // The data will print this
+    //     // console.log(data);
+    //     let [rowId, colId] = getRowCol(data);
+    //     cellData[rowId - 1][colId - 1].alignment = alignment;
+    // });
+    if (alignment != "left") {
+        $(".input-cell.selected").each(function (index, data) {
+            let [rowId, colId] = getRowCol(data);
+            if (cellData[selectedSheet][rowId - 1] == undefined) {
+                cellData[selectedSheet][rowId - 1] = {};
+                cellData[selectedSheet][rowId - 1][colId - 1] = { ...defaultProperties };
+                // ... Means Sparese of an object or Sparse Array 
+                // Creates an copy of object ans trans the copy of the object instead of reference of the object
+                cellData[selectedSheet][rowId - 1][colId - 1].alignment = alignment;
+            } else {
+                if (cellData[selectedSheet][rowId - 1][colId - 1] == undefined) {
+                    cellData[selectedSheet][rowId - 1][colId - 1] = { ...defaultProperties };
+                    cellData[selectedSheet][rowId - 1][colId - 1].alignment = alignment;
+                } else {
+                    cellData[selectedSheet][rowId - 1][colId - 1].alignment = alignment;
+                }
+            }
+        });
+    } else {
+        $(".input-cell.selected").each(function (index, data) {
+            let [rowId, colId] = getRowCol(data);
+            if (cellData[selectedSheet][rowId - 1][colId - 1] != undefined) {
+                cellData[selectedSheet][rowId - 1][colId - 1].alignment = alignment;
+                if (JSON.stringify(cellData[selectedSheet][rowId - 1][colId - 1]) == JSON.stringify(defaultProperties)) {
+                    delete cellData[selectedSheet][rowId - 1][colId - 1];
+                }
+            }
+        });
+    }
 });
 
 // Change Text to bold
