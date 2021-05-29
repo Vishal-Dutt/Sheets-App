@@ -83,6 +83,7 @@ $(".input-cell").dblclick(function (e) {
 
 $(".input-cell").blur(function (e) {
     $(this).attr("contenteditable", "false");
+    updateCellData("text", $(this).text());
 });
 
 // Click to select cell
@@ -208,13 +209,39 @@ function selectCell(ele, e, topCell, bottomCell, leftCell, rightCell) {
 // to the last aligned cell
 // Two Way Alignment
 function changeHeader([rowId, colId]) {
-    let data = cellData[rowId - 1][colId - 1];
+    // Cell Data Structure in the object format
+    console.log(cellData);
+    // Structure of cell Data
+    // { Sheet1: { … } }
+    // Sheet1:
+    // 2:
+    // 2:
+    // alignment: "center"
+    // bgcolor: "#2980B9"
+    // bold: true
+    // color: "#ECF0F1"
+    // font - family: "Impact"
+    // font - size: 24
+    // italic: true
+    // text: "TextTyped"
+    // underlined: true
+    // __proto__: Object
+    // __proto__: Object
+    // __proto__: Object
+    // __proto__: Object
+    // We are passing reference because we did not updated any cell data
+    let data;
+    if (cellData[selectedSheet][rowId - 1] && cellData[selectedSheet][rowId - 1][colId - 1]) {
+        data = cellData[selectedSheet][rowId - 1][colId - 1];
+    } else {
+        data = defaultProperties;
+    }
     // console.log(data);
     $(".alignment.selected").removeClass("selected");
     $(`.alignment[data-type=${data.alignment}]`).addClass("selected");
-    // if(data.bold){
+    // if (data.bold) {
     //     $("#bold").addClass("selected");
-    // }else {
+    // } else {
     //     $("#bold").removeClass("selected");
     // }
     addRemoveSelectFromFontStyle(data, "bold");
@@ -420,35 +447,7 @@ $(".alignment").click(function (e) {
     //     let [rowId, colId] = getRowCol(data);
     //     cellData[rowId - 1][colId - 1].alignment = alignment;
     // });
-    if (alignment != "left") {
-        $(".input-cell.selected").each(function (index, data) {
-            let [rowId, colId] = getRowCol(data);
-            if (cellData[selectedSheet][rowId - 1] == undefined) {
-                cellData[selectedSheet][rowId - 1] = {};
-                cellData[selectedSheet][rowId - 1][colId - 1] = { ...defaultProperties };
-                // ... Means Sparese of an object or Sparse Array 
-                // Creates an copy of object ans trans the copy of the object instead of reference of the object
-                cellData[selectedSheet][rowId - 1][colId - 1].alignment = alignment;
-            } else {
-                if (cellData[selectedSheet][rowId - 1][colId - 1] == undefined) {
-                    cellData[selectedSheet][rowId - 1][colId - 1] = { ...defaultProperties };
-                    cellData[selectedSheet][rowId - 1][colId - 1].alignment = alignment;
-                } else {
-                    cellData[selectedSheet][rowId - 1][colId - 1].alignment = alignment;
-                }
-            }
-        });
-    } else {
-        $(".input-cell.selected").each(function (index, data) {
-            let [rowId, colId] = getRowCol(data);
-            if (cellData[selectedSheet][rowId - 1][colId - 1] != undefined) {
-                cellData[selectedSheet][rowId - 1][colId - 1].alignment = alignment;
-                if (JSON.stringify(cellData[selectedSheet][rowId - 1][colId - 1]) == JSON.stringify(defaultProperties)) {
-                    delete cellData[selectedSheet][rowId - 1][colId - 1];
-                }
-            }
-        });
-    }
+    updateCellData("alignment", alignment);
 });
 
 // Change Text to bold
@@ -471,18 +470,20 @@ function setStyle(ele, property, key, value) {
     if ($(ele).hasClass("selected")) {
         $(ele).removeClass("selected");
         $(".input-cell.selected").css(key, "");
-        $(".input-cell.selected").each(function (index, data) {
-            let [rowId, colId] = getRowCol(data);
-            cellData[rowId - 1][colId - 1][property] = false;
-            //[property] act as a variable
-        });
+        // $(".input-cell.selected").each(function (index, data) {
+        //     let [rowId, colId] = getRowCol(data);
+        //     cellData[rowId - 1][colId - 1][property] = false;
+        //     //[property] act as a variable
+        // });
+        updateCellData(property, false);
     } else {
         $(ele).addClass("selected");
         $(".input-cell.selected").css(key, value);
-        $(".input-cell.selected").each(function (index, data) {
-            let [rowId, colId] = getRowCol(data);
-            cellData[rowId - 1][colId - 1][property] = true;
-        });
+        // $(".input-cell.selected").each(function (index, data) {
+        //     let [rowId, colId] = getRowCol(data);
+        //     cellData[rowId - 1][colId - 1][property] = true;
+        // });
+        updateCellData(property, true);
     }
 }
 
@@ -513,18 +514,20 @@ $(".pick-color").colorPick({
             if ($(this.element.children()[1]).attr("id") == "fill-color") {
                 $(".input-cell.selected").css("background-color", this.color);
                 $("#fill-color").css("border-bottom", `4px solid ${this.color}`);
-                $(".input-cell.selected").each((index, data) => {
-                    let [rowId, colId] = getRowCol(data);
-                    cellData[rowId - 1][colId - 1].bgcolor = this.color;
-                });
+                // $(".input-cell.selected").each((index, data) => {
+                //     let [rowId, colId] = getRowCol(data);
+                //     cellData[rowId - 1][colId - 1].bgcolor = this.color;
+                // });
+                updateCellData("bgcolor", this.color);
             }
             if ($(this.element.children()[1]).attr("id") == "text-color") {
                 $(".input-cell.selected").css("color", this.color);
                 $("#text-color").css("border-bottom", `4px solid ${this.color}`);
-                $(".input-cell.selected").each((index, data) => {
-                    let [rowId, colId] = getRowCol(data);
-                    cellData[rowId - 1][colId - 1].color = this.color;
-                });
+                // $(".input-cell.selected").each((index, data) => {
+                //     let [rowId, colId] = getRowCol(data);
+                //     cellData[rowId - 1][colId - 1].color = this.color;
+                // });
+                updateCellData("color", this.color);
             }
         }
     }
@@ -580,8 +583,47 @@ $(".menu-selector").change(function (e) {
     }
 
     $(".input-cell.selected").css(key, value);
-    $(".input-cell.selected").each((index, data) => {
-        let [rowId, colId] = getRowCol(data);
-        cellData[rowId - 1][colId - 1][key] = value;
-    })
-})
+    // $(".input-cell.selected").each((index, data) => {
+    //     let [rowId, colId] = getRowCol(data);
+    //     cellData[rowId - 1][colId - 1][key] = value;
+    // });
+    updateCellData(key, value);
+});
+
+function updateCellData(property, value) {
+    if (value != defaultProperties[property]) {
+        $(".input-cell.selected").each(function (index, data) {
+            let [rowId, colId] = getRowCol(data);
+            if (cellData[selectedSheet][rowId - 1] == undefined) {
+                cellData[selectedSheet][rowId - 1] = {};
+                cellData[selectedSheet][rowId - 1][colId - 1] = { ...defaultProperties };
+                // ... Means Sparese of an object or Sparse Array 
+                // Creates an copy of object ans trans the copy of the object instead of reference of the object
+                cellData[selectedSheet][rowId - 1][colId - 1][property] = value;
+            } else {
+                if (cellData[selectedSheet][rowId - 1][colId - 1] == undefined) {
+                    cellData[selectedSheet][rowId - 1][colId - 1] = { ...defaultProperties };
+                    cellData[selectedSheet][rowId - 1][colId - 1][property] = value;
+                } else {
+                    cellData[selectedSheet][rowId - 1][colId - 1][property] = value;
+                }
+            }
+        });
+    } else {
+        $(".input-cell.selected").each(function (index, data) {
+            let [rowId, colId] = getRowCol(data);
+            if (cellData[selectedSheet][rowId - 1][colId - 1] != undefined) {
+                cellData[selectedSheet][rowId - 1][colId - 1][property] = value;
+                if (JSON.stringify(cellData[selectedSheet][rowId - 1][colId - 1]) == JSON.stringify(defaultProperties)) {
+                    delete cellData[selectedSheet][rowId - 1][colId - 1];
+                }
+                // Delete Rows if there is no column keys in the entire row
+                // Object.keys gives the keys 
+                if (Object.keys(cellData[selectedSheet][rowId - 1]).length == 0) {
+                    // Object.keys will give the rows keys
+                    delete cellData[selectedSheet][rowId - 1];
+                }
+            }
+        });
+    }
+}
