@@ -642,11 +642,12 @@ function addSheetEvents() {
         // console.log("hello");
         // preventDefault stops the opening of the context menu on righ click
         e.preventDefault();
-        if (!$(this).hasClass("selecedted")) {
-            $(".sheet-tab.selected").removeClass("selected");
-            $(this).addClass("selected");
-            selectSheet();
-        }
+        // if (!$(this).hasClass("selecedted")) {
+        //     $(".sheet-tab.selected").removeClass("selected");
+        //     $(this).addClass("selected");
+        //     selectSheet();
+        // }
+        selectSheet(this);
         // Rename Modal
         $(".sheet-options-modal").remove();
         let modal = $(`    <div class="sheet-options-modal">
@@ -674,18 +675,56 @@ function addSheetEvents() {
                                     </div>
                                 </div>`);
             $(".container").append(renameModal);
+            // focus on rename modal input 
+            $(".sheet-modal-input").focus();
             $(".no-button").click(function (e) {
                 $(".sheet-modal-parent").remove();
             });
             $(".yes-button").click(function (e) {
                 renameSheet();
             });
-            $(".sheet-modal-input").keypress(function(e){
-                if(e.key == "Enter"){
+            // Rename the sheet on pressing enter
+            $(".sheet-modal-input").keypress(function (e) {
+                if (e.key == "Enter") {
                     renameSheet();
                 }
             })
         });
+
+        // Delete sheet on delete
+        $(".sheet-delete").click(function (e) {
+            if (totalSheets > 1) {
+                let deleteModal = $(`<div class="sheet-modal-parent">
+                        <div class="sheet-delete-modal">
+                            <div class="sheet-modal-title">Sheet Name</div>
+                            <div class="sheet-modal-detail-container">
+                                <span class="sheet-modal-detail-title">Are you sure?</span>
+                            </div>
+                            <div class="sheet-modal-confirmation">
+                                <div class="button yes-button">
+                                    <div class="material-icons delete-icon">delete</div>
+                                    Delete
+                                </div>
+                                <div class="button no-button">Cancel</div>
+                            </div>
+                        </div>
+                    </div>`);
+                $(".container").append(deleteModal);
+
+                $(".no-button").click(function (e) {
+                    $(".sheet-modal-parent").remove();
+                });
+
+                $(".yes-button").click(function (e) {
+                    // console.log(Object.keys(cellData));
+                    deleteSheet();
+                });
+
+            } else {
+                // Make Not Possilbe Delete Modal
+                alert("Not Possible");
+            }
+        })
     });
 
     // fucntion will get bind to sheet 1 only
@@ -695,11 +734,12 @@ function addSheetEvents() {
         // selectedSheet = $(this).text();
         // loadCurrentSheet();
         // The selected sheet does not have selected sheet event
-        if (!$(this).hasClass("selecedted")) {
-            $(".sheet-tab.selected").removeClass("selected");
-            $(this).addClass("selected");
-            selectSheet();
-        }
+        // if (!$(this).hasClass("selecedted")) {
+        //     $(".sheet-tab.selected").removeClass("selected");
+        //     $(this).addClass("selected");
+        //     selectSheet();
+        // }
+        selectSheet(this);
     });
 }
 
@@ -718,11 +758,16 @@ $(".add-sheet").click(function (e) {
     $(".sheet-tab-container").append(`<div class="sheet-tab selected">Sheet${lastlyAddedSheet}</div>`);
     selectSheet();
     addSheetEvents();
+    $(".sheet-tab.selected")[0].scrollIntoView();
 });
 
 
 // Select Sheet first empty the previous sheet the make
-function selectSheet() {
+function selectSheet(ele) {
+    if (ele && !$(ele).hasClass("selected")) {
+        $(".sheet-tab.selected").removeClass("selected");
+        $(ele).addClass("selected");
+    }
     emptyPreviousSheet();
     // Currently Selected Sheet gets Selected
     selectedSheet = $(".sheet-tab.selected").text();
@@ -784,3 +829,89 @@ function loadCurrentSheet() {
         }
     }
 }
+
+// Fucntion to Rename the Sheet 
+function renameSheet() {
+    // Get the new sheet name
+    let newSheetName = $(".sheet-modal-input").val();
+    // if newSheetName typed is not empty and the name of the sheet is not in the celldata
+    // Traverse on the cell data and ceate a new ccel data to updata the renamed sheet and
+    // then point the newCellData to the cellData
+    if (newSheetName && !Object.keys(cellData).includes(newSheetName)) {
+        let newCellData = {};
+        for (let i of Object.keys(cellData)) {
+            if (i == selectedSheet) {
+                newCellData[newSheetName] = cellData[selectedSheet];
+            } else {
+                newCellData[i] = cellData[i];
+            }
+        }
+
+        cellData = newCellData;
+        selectedSheet = newSheetName;
+        // linked list created new node and deleted the old node
+        // cellData[selectedSheet] is pointing to a sheet data in cellData
+        // A new pointer is creted withe new sheetmane cellData[newSheetName].
+        // Now points this pointer to the same referenced cellData[selectedSheet]
+        // delete the previous cellData[selectedSheet] pointer
+        // and updates the selectedSheet = newSheetName
+        // and now deleted
+        // cellData[newSheetName] = cellData[selectedSheet];
+        // delete cellData[selectedSheet];
+        // selectedSheet = newSheetName;
+        // updates the entered text to the selected sheet
+        $(".sheet-tab.selected").text(newSheetName);
+        // remove the rename modal on clicking to ok
+        $(".sheet-modal-parent").remove();
+    } else {
+        $(".rename-error").remove();
+        // Give error if sheet name is empty and sheet name already in the sheet data
+        $(".sheet-modal-input-container").append(`
+            <div class="rename-error"> Sheet Name is not valid or Sheet already exists! </div>
+        `)
+    }
+}
+
+// function to delete the Sheet1
+function deleteSheet() {
+    $(".sheet-modal-parent").remove();
+    let sheetIndex = Object.keys(cellData).indexOf(selectedSheet);
+    let currSelectedSheet = $(".sheet-tab.selected");
+    // find index of the selected sheet
+    if (sheetIndex == 0) {
+        // Select the next sheet
+        // as sheets are sotred udner div so .next give next subling of the current div
+        selectSheet(currSelectedSheet.next()[0]);
+    } else {
+        // selecte previous sheet
+        selectSheet(currSelectedSheet.prev()[0]);
+    }
+    // deletes sheet from cellData
+    delete cellData[currSelectedSheet.text()];
+    // delete sheet from 
+    currSelectedSheet.remove();
+    totalSheets--;
+}
+
+// Left Scroller and right scroller
+$(".left-scroller,.right-scroller").click(function (e) {
+    let keysArray = Object.keys(cellData);
+    let selectedSheetIndex = keysArray.indexOf(selectedSheet);
+    if (selectedSheetIndex != 0 && $(this).text() == "arrow_left") {
+        selectSheet($(".sheet-tab.selected").prev()[0]);
+    } else if (selectedSheetIndex != (keysArray.length - 1) && $(this).text() == "arrow_right") {
+        selectSheet($(".sheet-tab.selected").next()[0]);
+    }
+    // .scrollIntoView() is javascript method by which elemetns get into view automatically
+    $(".sheet-tab.selected")[0].scrollIntoView();
+});
+
+// Right Scroller
+// $(".right-scroller").click(function(e){
+//     let keysArray = Object.keys(cellData);
+//     let selectedSheetIndex = keysArray.indexOf(selectedSheet);
+//     if(selectedSheetIndex!= (keysArray.length-1)){
+//         selectSheet($(".sheet-tab.selected").next()[0]);
+//         $(".sheet-tab.selected")[0].scrollIntoView();
+//     }
+// });
