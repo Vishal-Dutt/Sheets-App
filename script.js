@@ -29,6 +29,7 @@ let cellData = {
 
 let selectedSheet = "Sheet1";
 let totalSheets = 1;
+let lastlyAddedSheet = 1;
 
 // Default Properties of Each Cell In Sheet
 let defaultProperties = {
@@ -210,7 +211,7 @@ function selectCell(ele, e, topCell, bottomCell, leftCell, rightCell) {
 // Two Way Alignment
 function changeHeader([rowId, colId]) {
     // Cell Data Structure in the object format
-    console.log(cellData);
+    // console.log(cellData);
     // Structure of cell Data
     // { Sheet1: { … } }
     // Sheet1:
@@ -612,18 +613,174 @@ function updateCellData(property, value) {
     } else {
         $(".input-cell.selected").each(function (index, data) {
             let [rowId, colId] = getRowCol(data);
-            if (cellData[selectedSheet][rowId - 1][colId - 1] != undefined) {
+            if (cellData[selectedSheet][rowId - 1] && cellData[selectedSheet][rowId - 1][colId - 1]) {
                 cellData[selectedSheet][rowId - 1][colId - 1][property] = value;
                 if (JSON.stringify(cellData[selectedSheet][rowId - 1][colId - 1]) == JSON.stringify(defaultProperties)) {
                     delete cellData[selectedSheet][rowId - 1][colId - 1];
                 }
                 // Delete Rows if there is no column keys in the entire row
                 // Object.keys gives the keys 
+                // using Object.keys the object is converted into the array as we cannot use .lenght function on objects
                 if (Object.keys(cellData[selectedSheet][rowId - 1]).length == 0) {
                     // Object.keys will give the rows keys
                     delete cellData[selectedSheet][rowId - 1];
                 }
             }
         });
+    }
+}
+
+// Remove context rename delete modal when we click 
+$(".container").click(function (e) {
+    $(".sheet-options-modal").remove();
+})
+
+// Add Sheet Events
+function addSheetEvents() {
+    // Binds the sheet tab to the context menu .on can also be use in place of .bind
+    $(".sheet-tab.selected").on("contextmenu", function (e) {
+        // console.log("hello");
+        // preventDefault stops the opening of the context menu on righ click
+        e.preventDefault();
+        if (!$(this).hasClass("selecedted")) {
+            $(".sheet-tab.selected").removeClass("selected");
+            $(this).addClass("selected");
+            selectSheet();
+        }
+        // Rename Modal
+        $(".sheet-options-modal").remove();
+        let modal = $(`    <div class="sheet-options-modal">
+                    <div class = "option sheet-rename">Rename</div>
+                    <div class = "option sheet-delete">Delete</div>
+                </div>`);
+        // console.log(e);
+        // e give xposition and yposition
+        modal.css({ "left": e.pageX });
+        $(".container").append(modal);
+
+        // Sheet Rename Modal
+        $(".sheet-rename").click(function (e) {
+            let renameModal = $(`<div class="sheet-modal-parent">
+                                    <div class="sheet-rename-modal">
+                                        <div class="sheet-modal-title">Rename Sheet</div>
+                                        <div class="sheet-modal-input-container">
+                                            <span class="sheet-modal-input-title">Rename Sheet to:</span>
+                                            <input class="sheet-modal-input" type="text" />
+                                        </div>
+                                        <div class="sheet-modal-confirmation">
+                                            <div class="button yes-button">OK</div>
+                                            <div class="button no-button">Cancel</div>
+                                        </div>
+                                    </div>
+                                </div>`);
+            $(".container").append(renameModal);
+            $(".no-button").click(function (e) {
+                $(".sheet-modal-parent").remove();
+            });
+            $(".yes-button").click(function (e) {
+                renameSheet();
+            });
+            $(".sheet-modal-input").keypress(function(e){
+                if(e.key == "Enter"){
+                    renameSheet();
+                }
+            })
+        });
+    });
+
+    // fucntion will get bind to sheet 1 only
+    $(".sheet-tab.selected").click(function (e) {
+        // emptyPreviousSheet();
+        // // Currently selected sheet will we selected
+        // selectedSheet = $(this).text();
+        // loadCurrentSheet();
+        // The selected sheet does not have selected sheet event
+        if (!$(this).hasClass("selecedted")) {
+            $(".sheet-tab.selected").removeClass("selected");
+            $(this).addClass("selected");
+            selectSheet();
+        }
+    });
+}
+
+addSheetEvents();
+// EVENTS GET BIND WITH ELEMENT NOT WITH CLASSES
+// focusout
+
+// Add new Sheet 
+$(".add-sheet").click(function (e) {
+    lastlyAddedSheet++;
+    totalSheets++;
+    cellData[`Sheet${lastlyAddedSheet}`] = {};
+    // Remove selected class from the previous sheet
+    $(".sheet-tab.selected").removeClass("selected");
+    // Add new sheet to the sheet tab conatiner and make it selected
+    $(".sheet-tab-container").append(`<div class="sheet-tab selected">Sheet${lastlyAddedSheet}</div>`);
+    selectSheet();
+    addSheetEvents();
+});
+
+
+// Select Sheet first empty the previous sheet the make
+function selectSheet() {
+    emptyPreviousSheet();
+    // Currently Selected Sheet gets Selected
+    selectedSheet = $(".sheet-tab.selected").text();
+    loadCurrentSheet();
+    $("#row-1-col-1").click();
+}
+
+
+// Function will empty the previous sheet wheh clicked on other sheet
+function emptyPreviousSheet() {
+    let data = cellData[selectedSheet];
+    // Gives rows in which changes are done
+    let rowKeys = Object.keys(data);
+    for (let i of rowKeys) {
+        // console.log(rowKeys);
+        let rowId = parseInt(i);
+        let colKeys = Object.keys(data[rowId]);
+        for (let j of colKeys) {
+            // Here i and j are string 
+            let colId = parseInt(j);
+            let cell = $(`#row-${rowId + 1}-col-${colId + 1}`);
+            cell.text("");
+            cell.css({
+                "font-family": "NotoSans",
+                "font-size": 14,
+                "background-color": "#fff",
+                "color": "#444",
+                "font-weight": "",
+                "font-style": "",
+                "text-decoration": "",
+                "text-align": "left"
+            });
+        }
+    }
+}
+
+// Fucntion to load the current sheet data
+
+function loadCurrentSheet() {
+    let data = cellData[selectedSheet];
+    let rowKeys = Object.keys(data);
+    for (let i of rowKeys) {
+        let rowId = parseInt(i);
+        let colKeys = Object.keys(data[rowId]);
+        for (let j of colKeys) {
+            let colId = parseInt(j);
+            let cell = $(`#row-${rowId + 1}-col-${colId + 1}`);
+            cell.text(data[rowId][colId].text);
+            cell.css({
+                "font-family": data[rowId][colId]["font-family"],
+                "font-size": data[rowId][colId]["font-size"],
+                "background-color": data[rowId][colId]["bgcolor"],
+                "color": data[rowId][colId].color,
+                "font-weight": data[rowId][colId].bold ? "bold" : "",
+                "font-style": data[rowId][colId].italic ? "italic" : "",
+                "text-decoration": data[rowId][colId].underlined ? "underline" : "",
+                "text-align": data[rowId][colId].alignment
+            });
+        }
     }
 }
