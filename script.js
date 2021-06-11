@@ -27,6 +27,8 @@ let cellData = {
     "Sheet1": {}
 };
 
+let save = true;
+
 let selectedSheet = "Sheet1";
 let totalSheets = 1;
 let lastlyAddedSheet = 1;
@@ -592,6 +594,7 @@ $(".menu-selector").change(function (e) {
 });
 
 function updateCellData(property, value) {
+    let currCellData = JSON.stringify(cellData);
     if (value != defaultProperties[property]) {
         $(".input-cell.selected").each(function (index, data) {
             let [rowId, colId] = getRowCol(data);
@@ -627,6 +630,10 @@ function updateCellData(property, value) {
                 }
             }
         });
+    }
+    // Check cell data if saved or not
+    if (save && currCellData != JSON.stringify(cellData)) {
+        save = false;
     }
 }
 
@@ -694,9 +701,10 @@ function addSheetEvents() {
         // Delete sheet on delete
         $(".sheet-delete").click(function (e) {
             if (totalSheets > 1) {
+                // <div class="sheet-modal-title">${$(".sheet-tab.selected").text()}</div>
                 let deleteModal = $(`<div class="sheet-modal-parent">
                         <div class="sheet-delete-modal">
-                            <div class="sheet-modal-title">Sheet Name</div>
+                            <div class="sheet-modal-title">${selectedSheet}</div>
                             <div class="sheet-modal-detail-container">
                                 <span class="sheet-modal-detail-title">Are you sure?</span>
                             </div>
@@ -749,6 +757,7 @@ addSheetEvents();
 
 // Add new Sheet 
 $(".add-sheet").click(function (e) {
+    save = false;
     lastlyAddedSheet++;
     totalSheets++;
     cellData[`Sheet${lastlyAddedSheet}`] = {};
@@ -838,6 +847,7 @@ function renameSheet() {
     // Traverse on the cell data and ceate a new ccel data to updata the renamed sheet and
     // then point the newCellData to the cellData
     if (newSheetName && !Object.keys(cellData).includes(newSheetName)) {
+        save = false;
         let newCellData = {};
         for (let i of Object.keys(cellData)) {
             if (i == selectedSheet) {
@@ -945,15 +955,120 @@ $("#menu-file").click(function (e) {
         width: "100vw"
     }, 300);
     // Close file modal when click on close button and also while click on transparnt modal
-    $(".close,.file-transparent").click(function (e) {
+    $(".close,.file-transparent,.new,.save").click(function (e) {
         fileModal.animate({
             width: "0vw"
         }, 300);
         setTimeout(() => {
             fileModal.remove();
-        },250);
+        }, 250);
     });
     // $(".file-transparent").click(function(e){
     //     console.log("file transparem div");
     // });
+    // $(".close").click(console.log("1"));
+
+    // Add New Sheet when click on new 
+    $(".new").click(function (e) {
+        // Data the current excel book data is empty then simply remove the excel book and create the new excel file
+        if (save) {
+            newFile();
+        }
+        else {
+            $(".container").append(`<div class="sheet-modal-parent">
+                                        <div class="sheet-delete-modal">
+                                            <div class="sheet-modal-title">${$(".title").text()}</div>
+                                            <div class="sheet-modal-detail-container">
+                                                <span class="sheet-modal-detail-title">Do you Want to save Changes? </span>
+                                            </div>
+                                            <div class="sheet-modal-confirmation">
+                                                <div class="button yes-button">
+                                                    Yes
+                                                </div>
+                                                <div class="button no-button">No</div>
+                                            </div>
+                                        </div>
+                                    </div>`);
+            $(".yes-button").click(function (e) {
+                saveFile();
+                // $(".sheet-modal-parent").remove();
+                // newFile();
+            });
+            $(".no-button,.yes-button").click(function (e) {
+                $(".sheet-modal-parent").remove();
+                newFile();
+            });
+        }
+    });
+    $(".save").click(function (e) {
+        if(!save){
+            saveFile();
+        }
+    });
 });
+
+// 
+function newFile() {
+    emptyPreviousSheet();
+    cellData = { "Sheet1": {} };
+    $(".sheet-tab").remove();
+    $(".sheet-tab-container").append(`<div class="sheet-tab selected">Sheet1</div>`);
+    // add sheet events to the new added sheet as it does not have any events attached to it
+    addSheetEvents();
+    selectedSheet = "Sheet1";
+    totalSheets = 1;
+    lastlyAddedSheet = 1;
+    $(".title").text("Excel - Book");
+    $("#row-1-col-1").click();
+}
+
+// Steps to create a new file function
+// On click new file first show only one sheet in the sheet tab 
+// Emply all the cells in the sheet with default properties
+// Sheet Title Excel Book
+// Cell Data sheet 1 empty sheet
+// emptyprevioussheet funtion empty the input cells in the sheet
+// cellData = { "Sheet1": {} }; empty the cell data
+// the below three line empty the sheet tab and create a new sheet tab with sheet 1
+// and adds the sheet events to the newly created sheet
+// select the sheet 1 and change the title of the new sheet and click on the first cell in the selected sheet
+// We run new file only when the data is saved or not
+// updatecell , rename , newsheet are the points where the cell data or sheet data changes
+// if yes the call the save fucntion and save the sheet data it no is clicked then simpy remove the modal
+
+
+// fucntion to save the file
+function saveFile() {
+
+    $(".container").append(` <div class="sheet-modal-parent">
+                                <div class="sheet-rename-modal">
+                                    <div class="sheet-modal-title">Save File</div>
+                                    <div class="sheet-modal-input-container">
+                                        <span class="sheet-modal-input-title">File Name:</span>
+                                        <input class="sheet-modal-input" value="${$(".title").text()}" type="text" />
+                                    </div>
+                                    <div class="sheet-modal-confirmation">
+                                        <div class="button yes-button">Save</div>
+                                        <div class="button no-button">Cancel</div>
+                                    </div>
+                                </div>
+                            </div>`);
+    $(".yes-button").click(function(e){
+        $(".title").text($(".sheet-modal-input").val());
+        // jquery click is not working 
+        let a = document.createElement("a");
+        a.href = `data:application/json,${encodeURIComponent(JSON.stringify(cellData))}`;
+        // encodeURIComponent is used to ecode the url to unicode
+        // encodeurl is import to download the file from the browser 
+        // if encodeURIComponent is not applied the cell data is missed while downloading
+        // a.href = `data:application/json,${JSON.stringify(cellData)}`;
+        a.download = $(".title").text() + ".json";
+        $(".container").append(a);
+        a.click();
+        a.remove();
+        save=true;
+    });
+    $(".no-button,.yes-button").click(function (e) {
+        $(".sheet-modal-parent").remove();
+    });
+}
