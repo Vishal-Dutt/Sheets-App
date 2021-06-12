@@ -955,7 +955,7 @@ $("#menu-file").click(function (e) {
         width: "100vw"
     }, 300);
     // Close file modal when click on close button and also while click on transparnt modal
-    $(".close,.file-transparent,.new,.save").click(function (e) {
+    $(".close,.file-transparent,.new,.save,.open").click(function (e) {
         fileModal.animate({
             width: "0vw"
         }, 300);
@@ -989,22 +989,27 @@ $("#menu-file").click(function (e) {
                                             </div>
                                         </div>
                                     </div>`);
-            $(".yes-button").click(function (e) {
-                saveFile();
-                // $(".sheet-modal-parent").remove();
-                // newFile();
-            });
-            $(".no-button,.yes-button").click(function (e) {
+            $(".no-button").click(function (e) {
                 $(".sheet-modal-parent").remove();
                 newFile();
+            });
+            $(".yes-button").click(function (e) {
+                $(".sheet-modal-parent").remove();
+                saveFile(true);
+                // $(".sheet-modal-parent").remove();
+                // newFile();
             });
         }
     });
     $(".save").click(function (e) {
-        if(!save){
+        if (!save) {
             saveFile();
         }
     });
+    // open file modal on click open file
+    $(".open").click(function (e) {
+        openFile();
+    })
 });
 
 // 
@@ -1038,7 +1043,7 @@ function newFile() {
 
 
 // fucntion to save the file
-function saveFile() {
+function saveFile(newClicked) {
 
     $(".container").append(` <div class="sheet-modal-parent">
                                 <div class="sheet-rename-modal">
@@ -1053,7 +1058,7 @@ function saveFile() {
                                     </div>
                                 </div>
                             </div>`);
-    $(".yes-button").click(function(e){
+    $(".yes-button").click(function (e) {
         $(".title").text($(".sheet-modal-input").val());
         // jquery click is not working 
         let a = document.createElement("a");
@@ -1066,9 +1071,77 @@ function saveFile() {
         $(".container").append(a);
         a.click();
         a.remove();
-        save=true;
+        save = true;
     });
     $(".no-button,.yes-button").click(function (e) {
         $(".sheet-modal-parent").remove();
+        if (newClicked) {
+            newFile();
+        }
     });
+}
+
+// Function to open a open file modal
+function openFile() {
+    // let inputFile = $(`<input type="file" />`);
+    // application/json will show only json file data
+    let inputFile = $(`<input accept="application/json" type="file" />`);
+    $(".container").append(inputFile);
+    inputFile.click();
+    inputFile.change(function (e) {
+        console.log(inputFile.val());
+        // This will print event go to target then files we get file name and 
+        // file path and file memetype file size
+        let file = e.target.files[0];
+        // console.log(file);
+        $(".title").text(file.name.split(".json")[0]);
+        // Read the content from the file
+        // Filereader is javascript inbuilt
+        let reader = new FileReader();
+        // read file as text
+        reader.readAsText(file);
+        // onload fucntion runs when data from the file is readed completely
+        // the readed data is stored in reader.result
+
+        reader.onload = () => {
+            // console.log(reader.result);
+            emptyPreviousSheet();
+            $(".sheet-tab").remove();
+            cellData = JSON.parse(reader.result);
+            let sheets = Object.keys(cellData);
+            lastlyAddedSheet = 1;
+            for (let i of sheets) {
+                // Sppose we have s1 s2 s3 s4 s5 s6 and we delete s1 s2 s3 if we add a new sheet then the new sheet
+                // added its name will be s4 will be repeated the below code prevents it.
+                if (i.includes("Sheet")) {
+                    let splittedSheetArray = i.split("Sheet");
+                    // splittedSheetArray = ["","1"];
+                    // if splittedSheetArray length is and the secon idx is a number
+                    // then update lastlyAddedSheet with splittedSheetArray[1];
+                    if (splittedSheetArray.length == 2 && !isNaN(splittedSheetArray[1])) {
+                        lastlyAddedSheet = parseInt(splittedSheetArray[1]);
+                    }
+                }
+                $(".sheet-tab-container").append(`<div class="sheet-tab selected">${i}</div>`);
+            }
+            addSheetEvents();
+            $(".sheet-tab").removeClass("selected");
+            $($(".sheet-tab")[0]).addClass("selected");
+            addSheetEvents();
+            $(".sheet-tab").removeClass("selected");
+            $($(".sheet-tab")[0]).addClass("selected");
+            selectedSheet = sheets[0];
+            totalSheets = sheets.length;
+            loadCurrentSheet();
+            inputFile.remove();
+        }
+        // Steps to open the file and save the file data o the excel book
+        // Step 1. Empty the cellData
+        // Step 2. Empty the sheet tab
+        // Step 3. JSON.Parse(reader.result) and store it in the cellData
+        // Step 4. Fill sheets
+        // Step 5. Add eventlistners
+        // Step 6. Make First sheet as selected sheet and load the sheet 1
+    });
+
 }
