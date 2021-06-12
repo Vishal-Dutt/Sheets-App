@@ -321,6 +321,13 @@ $(".input-cell").mousemove(function (e) {
             // The below line selects the start cell if we left click on the cell and move cursor slightly
             selectAllBetweenCells(startCell, startCell);
             startcellSelected = true;
+            // If we write in the cell whose contenteditable is true and selected the cells till new blur event is not hit
+            // when click on the copy button blur event will hit this will updateCellData(this.text());
+            // The updateCellData fucntion will update all the selected cell with the text written this cause problem.
+            // Suppose if we write text in one cell and selected cells correspodin to the cell and copy the cellData in the another cell.
+            // The current selected all cells data will be filled with the written data insted of only one cellData so to overcome this make 
+            // the make the input selected cell contenteditable false.
+            $(".input-cell.selected").attr("contenteditable","false");
         }
     } else {
         startcellSelected = false;
@@ -1145,3 +1152,44 @@ function openFile() {
     });
 
 }
+
+// Copy The Cell Data in the clipboard
+let clipboard = { startCell: [], cellData: {} };
+
+$("#copy").click(function (e) {
+    clipboard = { startCell: [], cellData: {} };
+    // let [rowId,colId] = getRowCol($(".input-cell.selected")[0]);
+    // clipboard.startCell = [rowId,colId];
+    clipboard.startCell = getRowCol($(".input-cell.selected")[0]);
+    $(".input-cell.selected").each(function (index, data) {
+        let [rowId, colId] = getRowCol(data);
+        if (cellData[selectedSheet][rowId - 1] && cellData[selectedSheet][rowId - 1][colId - 1]) {
+            if (!clipboard.cellData[rowId]) {
+                clipboard.cellData[rowId] = {};
+            }
+            clipboard.cellData[rowId][colId] = { ...cellData[selectedSheet][rowId - 1][colId - 1] };
+        }
+    });
+    console.log(clipboard);
+});
+
+// Paste the celldata
+$("#paste").click(function (e) {
+    // Get starcell of the selected cell
+    let startCell = getRowCol($(".input-cell.selected")[0]);
+    // Traverse on the clipboard cellData
+    let rows = Object.keys(clipboard.cellData);
+    for (let i of rows) {
+        let cols = Object.keys(clipboard.cellData[i]);
+        for (let j of cols) {
+            let rowDistance = parseInt(i) - parseInt(clipboard.startCell[0]);
+            let colDistance = parseInt(j) - parseInt(clipboard.startCell[1]);
+            if (!cellData[selectedSheet][startCell[0] + rowDistance - 1]) {
+                cellData[selectedSheet][startCell[0] + rowDistance - 1] = {};
+            }
+            cellData[selectedSheet][startCell[0] + rowDistance - 1][startCell[1] + colDistance - 1] = { ...clipboard.cellData[i][j] };
+        }
+    }
+    // Show the data on the UI
+    loadCurrentSheet();
+});
