@@ -327,7 +327,7 @@ $(".input-cell").mousemove(function (e) {
             // Suppose if we write text in one cell and selected cells correspodin to the cell and copy the cellData in the another cell.
             // The current selected all cells data will be filled with the written data insted of only one cellData so to overcome this make 
             // the make the input selected cell contenteditable false.
-            $(".input-cell.selected").attr("contenteditable","false");
+            $(".input-cell.selected").attr("contenteditable", "false");
         }
     } else {
         startcellSelected = false;
@@ -1155,8 +1155,11 @@ function openFile() {
 
 // Copy The Cell Data in the clipboard
 let clipboard = { startCell: [], cellData: {} };
-
-$("#copy").click(function (e) {
+let contentCutted = false;
+$("#cut,#copy").click(function (e) {
+    if ($(this).text() == "content_cut") {
+        contentCutted = true;
+    }
     clipboard = { startCell: [], cellData: {} };
     // let [rowId,colId] = getRowCol($(".input-cell.selected")[0]);
     // clipboard.startCell = [rowId,colId];
@@ -1170,15 +1173,30 @@ $("#copy").click(function (e) {
             clipboard.cellData[rowId][colId] = { ...cellData[selectedSheet][rowId - 1][colId - 1] };
         }
     });
-    console.log(clipboard);
+    // console.log(clipboard);
 });
 
 // Paste the celldata
 $("#paste").click(function (e) {
-    // Get starcell of the selected cell
+    if (contentCutted) {
+        emptyPreviousSheet();
+    }
     let startCell = getRowCol($(".input-cell.selected")[0]);
     // Traverse on the clipboard cellData
     let rows = Object.keys(clipboard.cellData);
+    for (let i of rows) {
+        let cols = Object.keys(clipboard.cellData[i]);
+        for (let j of cols) {
+            // Delete the cell data if contentCutted == true
+            if (contentCutted) {
+                delete cellData[selectedSheet][i - 1][j - 1];
+                if (Object.keys(cellData[selectedSheet][i - 1]).length == 0) {
+                    delete cellData[selectedSheet][i - 1];
+                }
+            }
+
+        }
+    }
     for (let i of rows) {
         let cols = Object.keys(clipboard.cellData[i]);
         for (let j of cols) {
@@ -1190,6 +1208,9 @@ $("#paste").click(function (e) {
             cellData[selectedSheet][startCell[0] + rowDistance - 1][startCell[1] + colDistance - 1] = { ...clipboard.cellData[i][j] };
         }
     }
-    // Show the data on the UI
     loadCurrentSheet();
+    if (contentCutted) {
+        contentCutted = false;
+        clipboard = { startCell: [], cellData: {} };
+    }
 });
